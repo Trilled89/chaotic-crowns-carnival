@@ -6,12 +6,26 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 
+interface Player {
+  id: string;
+  name: string;
+  color: number;
+  score: number;
+}
+
 interface Territory {
   id: string;
   position: THREE.Vector3;
   owner: string | null;
   mesh: THREE.Mesh;
 }
+
+const PLAYER_COLORS = {
+  'Player 1': 0x8B5CF6,
+  'Player 2': 0xEC4899,
+  'Player 3': 0x10B981,
+  'Player 4': 0xF59E0B,
+};
 
 const GameBoard = () => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -21,7 +35,13 @@ const GameBoard = () => {
   const controlsRef = useRef<OrbitControls>();
   const [selectedTerritory, setSelectedTerritory] = useState<Territory | null>(null);
   const territoriesRef = useRef<Territory[]>([]);
-  const [playerScore, setPlayerScore] = useState(0);
+  const [currentPlayer, setCurrentPlayer] = useState<string>('Player 1');
+  const [players, setPlayers] = useState<Player[]>([
+    { id: '1', name: 'Player 1', color: PLAYER_COLORS['Player 1'], score: 0 },
+    { id: '2', name: 'Player 2', color: PLAYER_COLORS['Player 2'], score: 0 },
+    { id: '3', name: 'Player 3', color: PLAYER_COLORS['Player 3'], score: 0 },
+    { id: '4', name: 'Player 4', color: PLAYER_COLORS['Player 4'], score: 0 },
+  ]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -78,7 +98,7 @@ const GameBoard = () => {
           const hexagon = createHexagon();
           const x = q * hexagonSpacing * 1.5;
           const y = (q * 0.866 + r * 1.732) * hexagonSpacing;
-          hexagon.position.set(x, 0, y); // Note: Using y as z for 3D space
+          hexagon.position.set(x, 0, y);
           scene.add(hexagon);
 
           territoriesRef.current.push({
@@ -191,45 +211,83 @@ const GameBoard = () => {
     }
 
     // Claim the territory
-    selectedTerritory.owner = "Player 1";
-    (selectedTerritory.mesh.material as THREE.MeshPhongMaterial).color.setHex(0x8B5CF6);
+    selectedTerritory.owner = currentPlayer;
+    (selectedTerritory.mesh.material as THREE.MeshPhongMaterial).color.setHex(
+      PLAYER_COLORS[currentPlayer as keyof typeof PLAYER_COLORS]
+    );
     (selectedTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.8;
 
-    setPlayerScore(prev => prev + 1);
+    // Update player score
+    setPlayers(prevPlayers => 
+      prevPlayers.map(player => 
+        player.name === currentPlayer 
+          ? { ...player, score: player.score + 1 }
+          : player
+      )
+    );
     
     toast({
       title: "Territory Claimed!",
-      description: "You've successfully claimed this territory.",
+      description: `${currentPlayer} has claimed this territory.`,
+    });
+
+    // Move to next player
+    setCurrentPlayer(prevPlayer => {
+      const currentIndex = players.findIndex(p => p.name === prevPlayer);
+      const nextIndex = (currentIndex + 1) % players.length;
+      return players[nextIndex].name;
     });
 
     setSelectedTerritory(null);
   };
 
   return (
-    <div className="game-container">
-      <div className="game-ui">
-        <Card className="player-info">
-          <h2 className="text-lg font-semibold">Player 1</h2>
-          <div className="flex gap-2">
-            <span className="text-sm text-gray-500">Territories: {playerScore}</span>
-            <span className="text-sm text-gray-500">Score: {playerScore * 100}</span>
+    <div className="game-container h-screen w-full flex flex-col md:flex-row">
+      <div className="game-ui w-full md:w-64 p-4 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold mb-4">Players</h2>
+          <div className="space-y-2">
+            {players.map((player) => (
+              <div 
+                key={player.id}
+                className={`p-2 rounded-lg ${
+                  currentPlayer === player.name 
+                    ? 'bg-primary/20 border border-primary'
+                    : 'bg-muted'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{player.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    Score: {player.score}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
+        </Card>
+
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold mb-2">Current Turn</h2>
+          <p className="text-muted-foreground">{currentPlayer}</p>
         </Card>
       </div>
       
-      <div ref={mountRef} className="game-board" />
-      
-      {selectedTerritory && (
-        <Card className="territory-info animate-fade-in">
-          <h3 className="text-sm font-medium mb-2">Selected Territory</h3>
-          <Button 
-            className="claim-button"
-            onClick={claimTerritory}
-          >
-            Claim Territory
-          </Button>
-        </Card>
-      )}
+      <div className="flex-1 relative">
+        <div ref={mountRef} className="w-full h-full" />
+        
+        {selectedTerritory && (
+          <Card className="territory-info absolute bottom-4 right-4 p-4 animate-in fade-in slide-in-from-bottom-4">
+            <h3 className="text-sm font-medium mb-2">Selected Territory</h3>
+            <Button 
+              className="w-full"
+              onClick={claimTerritory}
+            >
+              Claim Territory
+            </Button>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
