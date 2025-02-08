@@ -62,7 +62,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       return new THREE.Mesh(geometry, material);
     };
 
-    // Create grid of hexagons
+    // Create grid of hexagons with enhanced properties
     const gridSize = 5;
     const hexagonSpacing = 1.1;
     
@@ -79,7 +79,10 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
             id: `${q},${r}`,
             position: new THREE.Vector3(x, 0, y),
             owner: null,
-            mesh: hexagon
+            mesh: hexagon,
+            power: 0,
+            resources: [],
+            chaosLevel: 0
           });
         }
       }

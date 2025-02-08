@@ -18,16 +18,23 @@ const GameBoard = () => {
   const territoriesRef = useRef<Territory[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState<string>('Player 1');
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: 'Player 1', color: PLAYER_COLORS['Player 1'], score: 0 },
-    { id: '2', name: 'Player 2', color: PLAYER_COLORS['Player 2'], score: 0 },
-    { id: '3', name: 'Player 3', color: PLAYER_COLORS['Player 3'], score: 0 },
-    { id: '4', name: 'Player 4', color: PLAYER_COLORS['Player 4'], score: 0 },
+    { id: '1', name: 'Player 1', color: PLAYER_COLORS['Player 1'], score: 0, influence: 100 },
+    { id: '2', name: 'Player 2', color: PLAYER_COLORS['Player 2'], score: 0, influence: 100 },
+    { id: '3', name: 'Player 3', color: PLAYER_COLORS['Player 3'], score: 0, influence: 100 },
+    { id: '4', name: 'Player 4', color: PLAYER_COLORS['Player 4'], score: 0, influence: 100 },
   ]);
+
+  const generateResources = () => {
+    const possibleResources = ['Gold', 'Wood', 'Stone', 'Iron'];
+    const count = Math.floor(Math.random() * 3) + 1;
+    return Array.from({ length: count }, () => 
+      possibleResources[Math.floor(Math.random() * possibleResources.length)]
+    );
+  };
 
   const claimTerritory = () => {
     if (!selectedTerritory) return;
 
-    // Check if territory is already claimed
     if (selectedTerritory.owner) {
       toast({
         title: "Territory Already Claimed",
@@ -37,25 +44,33 @@ const GameBoard = () => {
       return;
     }
 
-    // Claim the territory
+    // Update territory with more details when claiming
     selectedTerritory.owner = currentPlayer;
+    selectedTerritory.power = Math.floor(Math.random() * 50) + 50; // Random power between 50-100
+    selectedTerritory.resources = generateResources();
+    selectedTerritory.chaosLevel = Math.floor(Math.random() * 5); // Random chaos level 0-5
+
     (selectedTerritory.mesh.material as THREE.MeshPhongMaterial).color.setHex(
       PLAYER_COLORS[currentPlayer as keyof typeof PLAYER_COLORS]
     );
     (selectedTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.8;
 
-    // Update player score
+    // Update player score based on territory value
+    const territoryValue = selectedTerritory.power + 
+                          (selectedTerritory.resources.length * 10) -
+                          (selectedTerritory.chaosLevel * 5);
+
     setPlayers(prevPlayers => 
       prevPlayers.map(player => 
         player.name === currentPlayer 
-          ? { ...player, score: player.score + 1 }
+          ? { ...player, score: player.score + territoryValue }
           : player
       )
     );
     
     toast({
       title: "Territory Claimed!",
-      description: `${currentPlayer} has claimed this territory.`,
+      description: `${currentPlayer} has claimed this territory worth ${territoryValue} points.`,
     });
 
     // Move to next player
