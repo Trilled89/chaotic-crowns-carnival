@@ -2,7 +2,7 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Territory } from '@/types/game';
-import { Shield, Swords, TreePine } from 'lucide-react';
+import { Crown, Shield, Swords, TreePine } from 'lucide-react';
 
 interface TerritoryInfoProps {
   selectedTerritory: Territory | null;
@@ -17,6 +17,13 @@ const TerritoryInfo = ({ selectedTerritory, onClaim }: TerritoryInfoProps) => {
       <h3 className="text-lg font-semibold mb-3">Territory Details</h3>
       
       <div className="space-y-2 mb-4">
+        {selectedTerritory.owner && (
+          <div className="flex items-center gap-2">
+            <Crown className="w-4 h-4 text-yellow-500" />
+            <span className="text-sm">Owner: {selectedTerritory.owner}</span>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4" />
           <span className="text-sm">Power: {selectedTerritory.power}</span>
@@ -42,7 +49,7 @@ const TerritoryInfo = ({ selectedTerritory, onClaim }: TerritoryInfoProps) => {
         onClick={onClaim}
         disabled={selectedTerritory.owner !== null}
       >
-        {selectedTerritory.owner ? 'Territory Claimed' : 'Claim Territory'}
+        {selectedTerritory.owner ? `Claimed by ${selectedTerritory.owner}` : 'Claim Territory'}
       </Button>
     </Card>
   );
