@@ -84,7 +84,7 @@ const GameBoard = () => {
   };
 
   return (
-    <div className="game-container h-screen w-full flex flex-col md:flex-row">
+    <div className="game-container h-screen w-full flex flex-col md:flex-row items-stretch">
       <div className="game-ui w-full md:w-64 p-4 space-y-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <PlayerList players={players} currentPlayer={currentPlayer} />
         <div className="p-4">
