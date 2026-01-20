@@ -28,7 +28,7 @@ const PlayerList = ({ players, currentPlayer }: PlayerListProps) => {
             key={player.id}
             aria-current={currentPlayer === player.name ? 'true' : undefined}
             className={cn(
-              "p-2 rounded-lg border",
+              "p-2 rounded-lg border transition-all duration-300",
               currentPlayer === player.name
                 ? "bg-primary/20 border-primary"
                 : "bg-muted border-transparent"
