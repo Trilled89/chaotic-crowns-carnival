@@ -99,6 +99,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
     // Add raycaster for territory selection
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    let hoveredTerritory: Territory | null = null;
 
     const onMouseMove = (event: MouseEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -108,19 +109,36 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(scene.children);
 
-      // Reset all territories to default appearance
-      territoriesRef.current.forEach(territory => {
-        if (!territory.owner) {
-          (territory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
-        }
-      });
-
       if (intersects.length > 0) {
         const selectedMesh = intersects[0].object as THREE.Mesh;
         const territory = territoriesRef.current.find(t => t.mesh === selectedMesh);
-        
+
         if (territory && !territory.owner) {
-          (selectedMesh.material as THREE.MeshPhongMaterial).opacity = 0.8;
+          if (hoveredTerritory !== territory) {
+            // Unhighlight previous
+            if (hoveredTerritory && !hoveredTerritory.owner) {
+              (hoveredTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
+            }
+            // Highlight new
+            (selectedMesh.material as THREE.MeshPhongMaterial).opacity = 0.8;
+            hoveredTerritory = territory;
+          }
+        } else {
+          // Hovering over something that isn't a valid target territory
+          if (hoveredTerritory) {
+            if (!hoveredTerritory.owner) {
+              (hoveredTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
+            }
+            hoveredTerritory = null;
+          }
+        }
+      } else {
+        // No intersection
+        if (hoveredTerritory) {
+          if (!hoveredTerritory.owner) {
+            (hoveredTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
+          }
+          hoveredTerritory = null;
         }
       }
     };
