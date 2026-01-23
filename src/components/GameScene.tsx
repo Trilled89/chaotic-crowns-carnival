@@ -51,42 +51,54 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
     controls.maxPolarAngle = Math.PI / 2;
     controlsRef.current = controls;
 
-    // Create hexagonal grid
-    const createHexagon = () => {
-      const geometry = new THREE.CircleGeometry(0.5, 6);
-      const material = new THREE.MeshPhongMaterial({
-        color: 0x9b87f5,
-        transparent: true,
-        opacity: 0.4,
-      });
-      return new THREE.Mesh(geometry, material);
-    };
-
-    // Create grid of hexagons with enhanced properties
+    // Create hexagonal grid using InstancedMesh
     const gridSize = 5;
     const hexagonSpacing = 1.1;
-    
+    const instances = [];
+    const coordinates = [];
+
     for (let q = -gridSize; q <= gridSize; q++) {
-      for (let r = -gridSize; r <= gridSize; r++) {
+      for (let r = -gridSiz
+      e; r <= gridSize; r++) {
         if (Math.abs(q + r) <= gridSize) {
-          const hexagon = createHexagon();
           const x = q * hexagonSpacing * 1.5;
           const y = (q * 0.866 + r * 1.732) * hexagonSpacing;
-          hexagon.position.set(x, 0, y);
-          scene.add(hexagon);
-
-          territoriesRef.current.push({
-            id: `${q},${r}`,
-            position: new THREE.Vector3(x, 0, y),
-            owner: null,
-            mesh: hexagon,
-            power: 0,
-            resources: [],
-            chaosLevel: 0
-          });
+          instances.push(new THREE.Vector3(x, 0, y));
+          coordinates.push({ q, r });
         }
       }
     }
+
+    const geometry = new THREE.CircleGeometry(0.5, 6);
+    const material = new THREE.MeshPhongMaterial({
+      color: 0x9b87f5,
+      transparent: true,
+      opacity: 0.4,
+      vertexColors: true,
+    });
+
+    const instancedMesh = new THREE.InstancedMesh(geometry, material, instances.length);
+    scene.add(instancedMesh);
+
+    instances.forEach((position, i) => {
+      const matrix = new THREE.Matrix4();
+      matrix.setPosition(position);
+      instancedMesh.setMatrixAt(i, matrix);
+
+      const q = Math.round((position.x / 1.5) / hexagonSpacing);
+      const r = Math.round(((position.z / 1.732) - (position.x / 1.5 * 0.866)) / hexagonSpacing);
+
+      territoriesRef.current.push({
+        id: `${q},${r}`,
+        position: position,
+        owner: null,
+        mesh: instancedMesh, // All territories now share the same mesh
+        instanceId: i, // Store the instance ID
+        power: 0,
+        resources: [],
+        chaosLevel: 0,
+      });
+    });
 
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 2);
@@ -108,19 +120,28 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(scene.children);
 
-      // Reset all territories to default appearance
-      territoriesRef.current.forEach(territory => {
-        if (!territory.owner) {
-          (territory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
-        }
-      });
-
-      if (intersects.length > 0) {
-        const selectedMesh = intersects[0].object as THREE.Mesh;
-        const territory = territoriesRef.current.find(t => t.mesh === selectedMesh);
+      // Logic to handle hover effect on instanced mesh
+      if (intersects.length > 0 && intersects[0].object instanceof THREE.InstancedMesh) {
+        const intersection = intersects[0];
+        const instanceId = intersection.instanceId;
         
+        const territory = territoriesRef.current.find(t => t.instanceId === instanceId);
+
         if (territory && !territory.owner) {
-          (selectedMesh.material as THREE.MeshPhongMaterial).opacity = 0.8;
+          const color = new THREE.Color(0xffffff); // Highlight color
+          (intersection.object as THREE.InstancedMesh).setColorAt(instanceId, color);
+          (intersection.object as THREE.InstancedMesh).instanceColor!.needsUpdate = true;
+        }
+      } else {
+        // Reset all instances to their original color
+        territoriesRef.current.forEach(territory => {
+          if (!territory.owner && territory.instanceId !== undefined) {
+            const color = new THREE.Color(0x9b87f5);
+            (territory.mesh as THREE.InstancedMesh).setColorAt(territory.instanceId, color);
+          }
+        });
+        if (territoriesRef.current.length > 0) {
+          (territoriesRef.current[0].mesh as THREE.InstancedMesh).instanceColor!.needsUpdate = true;
         }
       }
     };
@@ -133,9 +154,11 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(scene.children);
 
-      if (intersects.length > 0) {
-        const selectedMesh = intersects[0].object as THREE.Mesh;
-        const territory = territoriesRef.current.find(t => t.mesh === selectedMesh);
+      if (intersects.length > 0 && intersects[0].object instanceof THREE.InstancedMesh) {
+        const intersection = intersects[0];
+        const instanceId = intersection.instanceId;
+
+        const territory = territoriesRef.current.find(t => t.instanceId === instanceId);
         
         if (territory && !territory.owner) {
           onTerritorySelect(territory);

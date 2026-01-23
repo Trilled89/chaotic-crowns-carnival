@@ -50,10 +50,12 @@ const GameBoard = () => {
     selectedTerritory.resources = generateResources();
     selectedTerritory.chaosLevel = Math.floor(Math.random() * 5); // Random chaos level 0-5
 
-    (selectedTerritory.mesh.material as THREE.MeshPhongMaterial).color.setHex(
-      PLAYER_COLORS[currentPlayer as keyof typeof PLAYER_COLORS]
-    );
-    (selectedTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.8;
+    if (selectedTerritory.mesh instanceof THREE.InstancedMesh && selectedTerritory.instanceId !== undefined) {
+      const playerColor = PLAYER_COLORS[currentPlayer as keyof typeof PLAYER_COLORS];
+      const brighterColor = new THREE.Color(playerColor).multiplyScalar(1.5);
+      selectedTerritory.mesh.setColorAt(selectedTerritory.instanceId, brighterColor);
+      selectedTerritory.mesh.instanceColor!.needsUpdate = true;
+    }
 
     // Update player score based on territory value
     const territoryValue = selectedTerritory.power + 
