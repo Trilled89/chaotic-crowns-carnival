@@ -18,19 +18,19 @@ const TerritoryInfo = ({ selectedTerritory, onClaim }: TerritoryInfoProps) => {
       
       <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4" />
+          <Shield className="w-4 h-4" aria-hidden="true" />
           <span className="text-sm">Power: {selectedTerritory.power}</span>
         </div>
         
         <div className="flex items-center gap-2">
-          <TreePine className="w-4 h-4" />
+          <TreePine className="w-4 h-4" aria-hidden="true" />
           <span className="text-sm">
             Resources: {selectedTerritory.resources.join(', ') || 'None'}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
-          <Swords className="w-4 h-4" />
+          <Swords className="w-4 h-4" aria-hidden="true" />
           <span className="text-sm">
             Chaos Level: {selectedTerritory.chaosLevel}
           </span>
@@ -42,7 +42,7 @@ const TerritoryInfo = ({ selectedTerritory, onClaim }: TerritoryInfoProps) => {
         onClick={onClaim}
         disabled={selectedTerritory.owner !== null}
       >
-        {selectedTerritory.owner ? 'Territory Claimed' : 'Claim Territory'}
+        {selectedTerritory.owner ? `Owned by ${selectedTerritory.owner}` : 'Claim Territory'}
       </Button>
     </Card>
   );
