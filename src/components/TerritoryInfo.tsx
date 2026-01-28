@@ -2,7 +2,7 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Territory } from '@/types/game';
-import { Shield, Swords, TreePine } from 'lucide-react';
+import { Crown, Shield, Swords, TreePine } from 'lucide-react';
 
 interface TerritoryInfoProps {
   selectedTerritory: Territory | null;
@@ -17,20 +17,27 @@ const TerritoryInfo = ({ selectedTerritory, onClaim }: TerritoryInfoProps) => {
       <h3 className="text-lg font-semibold mb-3">Territory Details</h3>
       
       <div className="space-y-2 mb-4">
+        {selectedTerritory.owner && (
+          <div className="flex items-center gap-2 text-primary">
+            <Crown className="w-4 h-4" aria-hidden="true" />
+            <span className="text-sm font-medium">Owner: {selectedTerritory.owner}</span>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4" />
+          <Shield className="w-4 h-4" aria-hidden="true" />
           <span className="text-sm">Power: {selectedTerritory.power}</span>
         </div>
         
         <div className="flex items-center gap-2">
-          <TreePine className="w-4 h-4" />
+          <TreePine className="w-4 h-4" aria-hidden="true" />
           <span className="text-sm">
             Resources: {selectedTerritory.resources.join(', ') || 'None'}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
-          <Swords className="w-4 h-4" />
+          <Swords className="w-4 h-4" aria-hidden="true" />
           <span className="text-sm">
             Chaos Level: {selectedTerritory.chaosLevel}
           </span>
