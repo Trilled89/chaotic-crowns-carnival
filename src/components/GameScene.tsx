@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -51,15 +50,18 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
     controls.maxPolarAngle = Math.PI / 2;
     controlsRef.current = controls;
 
+    // Create shared geometry and material base to optimize performance
+    const hexGeometry = new THREE.CircleGeometry(0.5, 6);
+    const hexMaterialBase = new THREE.MeshPhongMaterial({
+      color: 0x9b87f5,
+      transparent: true,
+      opacity: 0.4,
+    });
+
     // Create hexagonal grid
     const createHexagon = () => {
-      const geometry = new THREE.CircleGeometry(0.5, 6);
-      const material = new THREE.MeshPhongMaterial({
-        color: 0x9b87f5,
-        transparent: true,
-        opacity: 0.4,
-      });
-      return new THREE.Mesh(geometry, material);
+      // Clone material to allow independent opacity control while sharing geometry
+      return new THREE.Mesh(hexGeometry, hexMaterialBase.clone());
     };
 
     // Create grid of hexagons with enhanced properties
@@ -171,6 +173,10 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       renderer.domElement.removeEventListener('mousemove', onMouseMove);
       renderer.domElement.removeEventListener('click', onClick);
       mountRef.current?.removeChild(renderer.domElement);
+
+      // Cleanup Three.js resources
+      hexGeometry.dispose();
+      hexMaterialBase.dispose();
     };
   }, [onTerritorySelect]);
 
