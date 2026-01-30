@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -16,9 +15,15 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
   const controlsRef = useRef<OrbitControls>();
+  const meshesRef = useRef<THREE.Mesh[]>([]);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    // Clear previous refs to prevent accumulation
+    meshesRef.current = [];
+    territoriesRef.current = [];
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -27,7 +32,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
       75,
-      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      mount.clientWidth / mount.clientHeight,
       0.1,
       1000
     );
@@ -37,9 +42,9 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
 
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+    renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setClearColor(0xffffff, 0);
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // OrbitControls setup
@@ -74,6 +79,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
           const y = (q * 0.866 + r * 1.732) * hexagonSpacing;
           hexagon.position.set(x, 0, y);
           scene.add(hexagon);
+          meshesRef.current.push(hexagon);
 
           territoriesRef.current.push({
             id: `${q},${r}`,
@@ -106,7 +112,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(scene.children);
+      const intersects = raycaster.intersectObjects(meshesRef.current);
 
       // Reset all territories to default appearance
       territoriesRef.current.forEach(territory => {
@@ -131,7 +137,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(scene.children);
+      const intersects = raycaster.intersectObjects(meshesRef.current);
 
       if (intersects.length > 0) {
         const selectedMesh = intersects[0].object as THREE.Mesh;
@@ -156,9 +162,8 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
 
     // Handle resize
     const handleResize = () => {
-      if (!mountRef.current) return;
-      const width = mountRef.current.clientWidth;
-      const height = mountRef.current.clientHeight;
+      const width = mount.clientWidth;
+      const height = mount.clientHeight;
 
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
@@ -170,9 +175,9 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('mousemove', onMouseMove);
       renderer.domElement.removeEventListener('click', onClick);
-      mountRef.current?.removeChild(renderer.domElement);
+      mount.removeChild(renderer.domElement);
     };
-  }, [onTerritorySelect]);
+  }, [onTerritorySelect, territoriesRef]);
 
   return <div ref={mountRef} className="w-full h-full" />;
 };
