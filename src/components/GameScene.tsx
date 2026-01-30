@@ -18,7 +18,8 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
   const controlsRef = useRef<OrbitControls>();
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    if (!mount) return;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -27,7 +28,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
       75,
-      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      mount.clientWidth / mount.clientHeight,
       0.1,
       1000
     );
@@ -37,9 +38,9 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
 
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+    renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setClearColor(0xffffff, 0);
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // OrbitControls setup
@@ -75,7 +76,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
           hexagon.position.set(x, 0, y);
           scene.add(hexagon);
 
-          territoriesRef.current.push({
+          const territory: Territory = {
             id: `${q},${r}`,
             position: new THREE.Vector3(x, 0, y),
             owner: null,
@@ -83,7 +84,10 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
             power: 0,
             resources: [],
             chaosLevel: 0
-          });
+          };
+
+          hexagon.userData.territory = territory;
+          territoriesRef.current.push(territory);
         }
       }
     }
@@ -100,6 +104,9 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
+    // Track hovered territory to avoid O(N) iteration
+    let hoveredTerritory: Territory | null = null;
+
     const onMouseMove = (event: MouseEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -108,19 +115,32 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(scene.children);
 
-      // Reset all territories to default appearance
-      territoriesRef.current.forEach(territory => {
-        if (!territory.owner) {
-          (territory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
-        }
-      });
-
       if (intersects.length > 0) {
         const selectedMesh = intersects[0].object as THREE.Mesh;
-        const territory = territoriesRef.current.find(t => t.mesh === selectedMesh);
+        const territory = selectedMesh.userData.territory as Territory;
         
+        // If we are hovering over the same territory, do nothing
+        if (hoveredTerritory === territory) return;
+
+        // Reset previous territory opacity
+        if (hoveredTerritory && !hoveredTerritory.owner) {
+          (hoveredTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
+        }
+
+        // Update hovered territory
+        hoveredTerritory = territory;
+
+        // Highlight new territory
         if (territory && !territory.owner) {
           (selectedMesh.material as THREE.MeshPhongMaterial).opacity = 0.8;
+        }
+      } else {
+        // No intersection, reset previous territory if exists
+        if (hoveredTerritory) {
+          if (!hoveredTerritory.owner) {
+            (hoveredTerritory.mesh.material as THREE.MeshPhongMaterial).opacity = 0.4;
+          }
+          hoveredTerritory = null;
         }
       }
     };
@@ -135,7 +155,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
 
       if (intersects.length > 0) {
         const selectedMesh = intersects[0].object as THREE.Mesh;
-        const territory = territoriesRef.current.find(t => t.mesh === selectedMesh);
+        const territory = selectedMesh.userData.territory as Territory;
         
         if (territory && !territory.owner) {
           onTerritorySelect(territory);
@@ -156,9 +176,9 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
 
     // Handle resize
     const handleResize = () => {
-      if (!mountRef.current) return;
-      const width = mountRef.current.clientWidth;
-      const height = mountRef.current.clientHeight;
+      if (!mount) return;
+      const width = mount.clientWidth;
+      const height = mount.clientHeight;
 
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
@@ -170,9 +190,9 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('mousemove', onMouseMove);
       renderer.domElement.removeEventListener('click', onClick);
-      mountRef.current?.removeChild(renderer.domElement);
+      mount.removeChild(renderer.domElement);
     };
-  }, [onTerritorySelect]);
+  }, [onTerritorySelect, territoriesRef]);
 
   return <div ref={mountRef} className="w-full h-full" />;
 };
