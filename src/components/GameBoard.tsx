@@ -93,7 +93,7 @@ const GameBoard = () => {
         </div>
       </div>
       
-      <div className="flex-1 relative">
+      <div className="flex-1 relative h-full">
         <GameScene 
           territoriesRef={territoriesRef}
           onTerritorySelect={setSelectedTerritory}
@@ -103,6 +103,7 @@ const GameBoard = () => {
         <TerritoryInfo 
           selectedTerritory={selectedTerritory}
           onClaim={claimTerritory}
+          onClose={() => setSelectedTerritory(null)}
         />
       </div>
     </div>

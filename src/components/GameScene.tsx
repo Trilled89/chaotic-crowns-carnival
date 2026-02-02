@@ -137,7 +137,7 @@ const GameScene = ({ territoriesRef, onTerritorySelect, PLAYER_COLORS }: GameSce
         const selectedMesh = intersects[0].object as THREE.Mesh;
         const territory = territoriesRef.current.find(t => t.mesh === selectedMesh);
         
-        if (territory && !territory.owner) {
+        if (territory) {
           onTerritorySelect(territory);
         }
       }
