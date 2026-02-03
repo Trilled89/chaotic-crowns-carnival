@@ -103,6 +103,7 @@ const GameBoard = () => {
         <TerritoryInfo 
           selectedTerritory={selectedTerritory}
           onClaim={claimTerritory}
+          onClose={() => setSelectedTerritory(null)}
         />
       </div>
     </div>
