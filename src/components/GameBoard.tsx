@@ -1,4 +1,3 @@
-
 import { useRef, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Player, Territory } from '@/types/game';
@@ -93,7 +92,7 @@ const GameBoard = () => {
         </div>
       </div>
       
-      <div className="flex-1 relative">
+      <div className="flex-1 relative h-full">
         <GameScene 
           territoriesRef={territoriesRef}
           onTerritorySelect={setSelectedTerritory}
