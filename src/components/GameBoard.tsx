@@ -1,4 +1,3 @@
-
 import { useRef, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Player, Territory } from '@/types/game';
@@ -103,6 +102,7 @@ const GameBoard = () => {
         <TerritoryInfo 
           selectedTerritory={selectedTerritory}
           onClaim={claimTerritory}
+          onClose={() => setSelectedTerritory(null)}
         />
       </div>
     </div>
